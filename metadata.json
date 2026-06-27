@@ -1,0 +1,6 @@
+{
+  "name": "NagarAI",
+  "description": "Smart Civic Issue Reporting & Predictive Analytics",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

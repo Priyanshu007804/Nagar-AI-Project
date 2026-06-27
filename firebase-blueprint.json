@@ -1,0 +1,53 @@
+{
+  "entities": {
+    "Report": {
+      "title": "Civic Report",
+      "description": "A reported civic issue with AI classification and location coordinates",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "issueType": { "type": "string" },
+        "location": { "type": "string" },
+        "severity": { "type": "string" },
+        "status": { "type": "string" },
+        "date": { "type": "string" },
+        "description": { "type": "string" },
+        "aiDescription": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "confidence": { "type": "number" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" }
+      },
+      "required": ["issueType", "location", "severity", "status", "date"]
+    },
+    "UserProfile": {
+      "title": "Citizen Profile",
+      "description": "User profile with points, badges, and streaks for gamification",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "points": { "type": "number" },
+        "streak": { "type": "number" },
+        "lastReportDate": { "type": "string" },
+        "reportedCount": { "type": "number" },
+        "potholeCount": { "type": "number" },
+        "unlockedBadges": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["id", "name", "points", "streak", "reportedCount", "potholeCount", "unlockedBadges"]
+    }
+  },
+  "firestore": {
+    "/reports": {
+      "schema": "Report",
+      "description": "Collection of all submitted civic issue reports"
+    },
+    "/profiles": {
+      "schema": "UserProfile",
+      "description": "Gamification profiles for citizens"
+    }
+  }
+}
