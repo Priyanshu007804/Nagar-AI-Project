@@ -6,22 +6,62 @@
   --font-display: "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   
-  --color-primary: #8b5cf6;
-  --color-primary-foreground: #ffffff;
-  --color-background: #020617;
-  --color-foreground: #f8fafc;
-  --color-card: #0f172a;
-  --color-card-foreground: #f8fafc;
-  --color-popover: #0f172a;
-  --color-popover-foreground: #f8fafc;
-  --color-border: #1e293b;
-  --color-input: #1e293b;
-  --color-muted: #1e293b;
-  --color-muted-foreground: #94a3b8;
-  --color-accent: #38bdf8;
-  --color-accent-foreground: #020617;
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #ffffff;
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+}
+
+:root {
+  /* Light Theme variables */
+  --background: #f8fafc;
+  --foreground: #020617;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #8b5cf6;
+  --primary-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #38bdf8;
+  --accent-foreground: #020617;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+}
+
+.dark {
+  /* Dark Theme variables - exact match of original values */
+  --background: #020617;
+  --foreground: #f8fafc;
+  --card: #0f172a;
+  --card-foreground: #f8fafc;
+  --popover: #0f172a;
+  --popover-foreground: #f8fafc;
+  --primary: #8b5cf6;
+  --primary-foreground: #ffffff;
+  --border: #1e293b;
+  --input: #1e293b;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #38bdf8;
+  --accent-foreground: #020617;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
 }
 
 @layer base {
