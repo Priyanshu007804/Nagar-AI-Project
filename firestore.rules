@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUserProfile(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 100
+        && data.points is int
+        && data.streak is int
+        && data.reportedCount is int
+        && data.potholeCount is int
+        && data.unlockedBadges is list;
+    }
+
+    function isValidReport(data) {
+      return data.issueType is string && data.issueType.size() <= 100
+        && data.location is string && data.location.size() <= 500
+        && data.severity is string && data.severity.size() <= 50
+        && data.status is string && data.status.size() <= 50
+        && data.date is string && data.date.size() <= 50
+        && data.reporterId is string && data.reporterId.size() <= 128;
+    }
+
+    // Profiles Collection
+    match /profiles/{uid} {
+      // Anyone can read profiles to populate leaderboards and view user details
+      allow read, list: if true;
+      
+      // Creating a profile requires being the owner and providing valid schema
+      allow create: if isOwner(uid) && isValidUserProfile(request.resource.data);
+      
+      // Updating a profile is allowed if:
+      // 1. The authenticated user is the owner of the profile
+      // 2. Or another signed-in user is verifying a report, which increments only the 'points' field
+      allow update: if (isOwner(uid) && isValidUserProfile(request.resource.data))
+        || (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points']));
+      
+      // Deleting profiles is forbidden
+      allow delete: if false;
+    }
+
+    // Reports Collection
+    match /reports/{reportId} {
+      // Anyone can read reports (dashboard views, interactive maps, public list feeds)
+      allow read, list: if true;
+      
+      // Creating a report requires being logged in and sending valid data
+      allow create: if isSignedIn() && isValidReport(request.resource.data);
+      
+      // Updating a report is allowed for any authenticated user (e.g. status changes, appending verifications)
+      allow update: if isSignedIn() && isValidReport(request.resource.data);
+      
+      // Deleting reports is forbidden
+      allow delete: if false;
+    }
+  }
+}

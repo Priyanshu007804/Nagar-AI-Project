@@ -6,6 +6,7 @@ import { Home } from "./views/Home";
 import { ReportPage } from "./views/Report";
 import { DashboardPage } from "./views/Dashboard";
 import { ComplaintLetterPage } from "./views/ComplaintLetter";
+import { ProfilePage } from "./views/Profile";
 
 export default function App() {
   // Use a clean SPA routing mechanism with browser history support
@@ -38,6 +39,8 @@ export default function App() {
         return <DashboardPage />;
       case "/complaint-letter":
         return <ComplaintLetterPage />;
+      case "/profile":
+        return <ProfilePage onNavigate={handleNavigate} />;
       default:
         return <Home onNavigate={handleNavigate} />;
     }

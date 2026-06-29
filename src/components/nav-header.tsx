@@ -31,7 +31,8 @@ export function NavHeader({ currentPath, onNavigate }: NavHeaderProps) {
     { path: '/', label: 'Home' },
     { path: '/report', label: 'Report Issue' },
     { path: '/dashboard', label: 'Dashboard' },
-    { path: '/complaint-letter', label: 'Complaint Letter' }
+    { path: '/complaint-letter', label: 'Complaint Letter' },
+    { path: '/profile', label: 'Citizen Profile' }
   ];
 
   return (

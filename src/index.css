@@ -24,7 +24,7 @@
   --color-destructive-foreground: var(--destructive-foreground);
 }
 
-:root {
+:root, .light {
   /* Light Theme variables */
   --background: #f8fafc;
   --foreground: #020617;

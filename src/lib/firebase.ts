@@ -16,6 +16,18 @@ import {
   updateDoc,
   limit
 } from "firebase/firestore";
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged, 
+  updateProfile,
+  User,
+  GoogleAuthProvider,
+  signInWithPopup
+} from "firebase/auth";
+import firebaseAppletConfig from "../../firebase-applet-config.json";
 import { mockReports } from "./data";
 
 // Type definitions
@@ -96,23 +108,27 @@ function notifyListeners() {
 
 // Firebase Initialization
 let db: any = null;
+let auth: any = null;
 let useFirebase = false;
 
 const firebaseConfig = {
-  apiKey: (import.meta as any).env?.VITE_FIREBASE_API_KEY || "",
-  authDomain: (import.meta as any).env?.VITE_FIREBASE_AUTH_DOMAIN || "",
-  projectId: (import.meta as any).env?.VITE_FIREBASE_PROJECT_ID || "",
-  storageBucket: (import.meta as any).env?.VITE_FIREBASE_STORAGE_BUCKET || "",
-  messagingSenderId: (import.meta as any).env?.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
-  appId: (import.meta as any).env?.VITE_FIREBASE_APP_ID || "",
+  apiKey: firebaseAppletConfig.apiKey || (import.meta as any).env?.VITE_FIREBASE_API_KEY || "",
+  authDomain: firebaseAppletConfig.authDomain || (import.meta as any).env?.VITE_FIREBASE_AUTH_DOMAIN || "",
+  projectId: firebaseAppletConfig.projectId || (import.meta as any).env?.VITE_FIREBASE_PROJECT_ID || "",
+  storageBucket: firebaseAppletConfig.storageBucket || (import.meta as any).env?.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: firebaseAppletConfig.messagingSenderId || (import.meta as any).env?.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: firebaseAppletConfig.appId || (import.meta as any).env?.VITE_FIREBASE_APP_ID || "",
 };
 
 if (firebaseConfig.apiKey && firebaseConfig.projectId) {
   try {
     const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    db = getFirestore(app);
+    db = firebaseAppletConfig.firestoreDatabaseId 
+      ? getFirestore(app, firebaseAppletConfig.firestoreDatabaseId) 
+      : getFirestore(app);
+    auth = getAuth(app);
     useFirebase = true;
-    console.log("Firebase initialized successfully in application.");
+    console.log("Firebase initialized successfully with Auth and custom Firestore database ID.");
     
     // Validate Connection to Firestore (Firebase Skill CRITICAL CONSTRAINT)
     const testConnection = async () => {
@@ -129,6 +145,129 @@ if (firebaseConfig.apiKey && firebaseConfig.projectId) {
     console.warn("Firebase config present but failed to initialize. Falling back to local storage.", e);
     useFirebase = false;
   }
+}
+
+// Authentication active tracking
+let currentAuthUser: User | null = null;
+if (auth) {
+  onAuthStateChanged(auth, (user) => {
+    currentAuthUser = user;
+  });
+}
+
+export async function signUpUser(email: string, password: string, name: string): Promise<User> {
+  if (!useFirebase || !auth) {
+    throw new Error("Firebase Auth is not initialized.");
+  }
+  try {
+    const credential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = credential.user;
+    await updateProfile(user, { displayName: name });
+    
+    // Create their UserProfile document
+    const defaultProfile: UserProfile = {
+      id: user.uid,
+      name: name,
+      points: 10, // Start with 10 onboarding points!
+      streak: 0,
+      reportedCount: 0,
+      potholeCount: 0,
+      unlockedBadges: [],
+    };
+    await updateUserProfile(defaultProfile);
+    
+    return user;
+  } catch (error: any) {
+    console.error("Firebase Sign Up Error:", error);
+    throw error;
+  }
+}
+
+export async function signInUser(email: string, password: string): Promise<User> {
+  if (!useFirebase || !auth) {
+    throw new Error("Firebase Auth is not initialized.");
+  }
+  try {
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    const user = credential.user;
+    
+    // Ensure profile exists in Firestore, if not create one
+    const profileDocRef = doc(db, "profiles", user.uid);
+    const profileSnap = await getDoc(profileDocRef);
+    if (!profileSnap.exists()) {
+      const defaultProfile: UserProfile = {
+        id: user.uid,
+        name: user.displayName || generateAnonymousName(),
+        points: 0,
+        streak: 0,
+        reportedCount: 0,
+        potholeCount: 0,
+        unlockedBadges: [],
+      };
+      await updateUserProfile(defaultProfile);
+    }
+    
+    return user;
+  } catch (error: any) {
+    console.error("Firebase Sign In Error:", error);
+    throw error;
+  }
+}
+
+export async function signInWithGoogle(): Promise<User> {
+  if (!useFirebase || !auth) {
+    throw new Error("Firebase Auth is not initialized.");
+  }
+  try {
+    const provider = new GoogleAuthProvider();
+    const credential = await signInWithPopup(auth, provider);
+    const user = credential.user;
+    
+    // Ensure profile exists in Firestore, if not create one
+    const profileDocRef = doc(db, "profiles", user.uid);
+    const profileSnap = await getDoc(profileDocRef);
+    if (!profileSnap.exists()) {
+      const defaultProfile: UserProfile = {
+        id: user.uid,
+        name: user.displayName || generateAnonymousName(),
+        points: 10, // Start with 10 onboarding points!
+        streak: 0,
+        reportedCount: 0,
+        potholeCount: 0,
+        unlockedBadges: [],
+      };
+      await updateUserProfile(defaultProfile);
+    }
+    
+    return user;
+  } catch (error: any) {
+    console.error("Firebase Google Sign In Error:", error);
+    throw error;
+  }
+}
+
+export async function signOutUser(): Promise<void> {
+  if (useFirebase && auth) {
+    await signOut(auth);
+    currentAuthUser = null;
+  }
+}
+
+export function subscribeToAuth(callback: (user: User | null) => void): () => void {
+  if (useFirebase && auth) {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      currentAuthUser = user;
+      callback(user);
+    });
+    return unsub;
+  }
+  // Fallback for non-Firebase environments
+  callback(null);
+  return () => {};
+}
+
+export function getCurrentAuthUser(): User | null {
+  return currentAuthUser;
 }
 
 // Firestore Error Handlers
@@ -192,6 +331,12 @@ export function generateAnonymousName(): string {
  * Gets or creates a unique client-side session ID.
  */
 export function getCurrentUserId(): string {
+  if (useFirebase && auth?.currentUser) {
+    return auth.currentUser.uid;
+  }
+  if (currentAuthUser) {
+    return currentAuthUser.uid;
+  }
   if (typeof window === "undefined") return "server-user";
   let uid = localStorage.getItem(LOCAL_USER_ID_KEY);
   if (!uid) {
@@ -290,6 +435,9 @@ export function subscribeToUserProfile(callback: (profile: UserProfile) => void)
         localStorage.setItem(LOCAL_PROFILE_KEY, JSON.stringify(data));
         callback(data);
       }
+    }, (error) => {
+      console.warn("Firestore profile subscription error, falling back to local profile:", error);
+      getUserProfile().then(callback);
     });
     return unsub;
   }
@@ -357,6 +505,9 @@ export async function getLeaderboard(): Promise<UserProfile[]> {
 export function subscribeToLeaderboard(callback: (leaderboard: UserProfile[]) => void): () => void {
   if (useFirebase && db) {
     const unsub = onSnapshot(collection(db, "profiles"), () => {
+      getLeaderboard().then(callback);
+    }, (error) => {
+      console.warn("Firestore leaderboard subscription error, falling back:", error);
       getLeaderboard().then(callback);
     });
     return unsub;
@@ -560,7 +711,8 @@ export function subscribeToReports(callback: (reports: Report[]) => void): () =>
       });
       callback(fetchedReports);
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, path);
+      console.warn("Firestore reports subscription error, falling back to localStorage:", error);
+      callback(getLocalStorageReports());
     });
 
     return unsubscribe;
