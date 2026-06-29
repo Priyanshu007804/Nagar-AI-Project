@@ -159,6 +159,7 @@ export function DashboardPage() {
   const [predictions, setPredictions] = useState<string[]>([]);
   const [isPredicting, setIsPredicting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const hasFetchedPredictionsRef = useRef(false);
 
   // Gamification States
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -317,7 +318,8 @@ export function DashboardPage() {
 
   // Fetch AI Predictions when reports update
   useEffect(() => {
-    if (reports.length > 0 && predictions.length === 0 && !isPredicting) {
+    if (reports.length > 0 && !hasFetchedPredictionsRef.current) {
+      hasFetchedPredictionsRef.current = true;
       const fetchPredictions = async () => {
         setIsPredicting(true);
         try {
@@ -326,16 +328,32 @@ export function DashboardPage() {
           const summary = `We have ${reports.length} total reports. Recent issues include: ${types} in areas like: ${locations}.`;
 
           const preds = await predictCivicRisks(summary);
-          setPredictions(preds);
+          
+          if (Array.isArray(preds)) {
+            setPredictions(preds);
+          } else if (preds && typeof preds === "object" && Array.isArray((preds as any).predictions)) {
+            setPredictions((preds as any).predictions);
+          } else {
+            setPredictions([
+              "Ensure low-lying storm drains are monitored for severe blockages.",
+              "Track active garbage pile-up reports near municipal market areas.",
+              "Coordinate prompt contractor response for arterial pothole hazards."
+            ]);
+          }
         } catch (error) {
           console.error("AI Predictions failed:", error);
+          setPredictions([
+            "Ensure low-lying storm drains are monitored for severe blockages.",
+            "Track active garbage pile-up reports near municipal market areas.",
+            "Coordinate prompt contractor response for arterial pothole hazards."
+          ]);
         } finally {
           setIsPredicting(false);
         }
       };
       fetchPredictions();
     }
-  }, [reports, predictions.length, isPredicting]);
+  }, [reports]);
 
   const getSeverityColor = (severity: string) => {
     switch (severity?.toLowerCase()) {

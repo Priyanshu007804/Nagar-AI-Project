@@ -44,14 +44,12 @@ service cloud.firestore {
       // Anyone can read profiles to populate leaderboards and view user details
       allow read, list: if true;
       
-      // Creating a profile requires being the owner and providing valid schema
-      allow create: if isOwner(uid) && isValidUserProfile(request.resource.data);
+      // Creating a profile requires providing a valid schema (supports both guests and authenticated owners)
+      allow create: if isValidUserProfile(request.resource.data);
       
-      // Updating a profile is allowed if:
-      // 1. The authenticated user is the owner of the profile
-      // 2. Or another signed-in user is verifying a report, which increments only the 'points' field
-      allow update: if (isOwner(uid) && isValidUserProfile(request.resource.data))
-        || (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points']));
+      // Updating a profile requires a valid schema, or only incrementing the points field for report verification
+      allow update: if isValidUserProfile(request.resource.data)
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points']);
       
       // Deleting profiles is forbidden
       allow delete: if false;
@@ -62,11 +60,11 @@ service cloud.firestore {
       // Anyone can read reports (dashboard views, interactive maps, public list feeds)
       allow read, list: if true;
       
-      // Creating a report requires being logged in and sending valid data
-      allow create: if isSignedIn() && isValidReport(request.resource.data);
+      // Creating a report is allowed for anyone with valid data (including guests)
+      allow create: if isValidReport(request.resource.data);
       
-      // Updating a report is allowed for any authenticated user (e.g. status changes, appending verifications)
-      allow update: if isSignedIn() && isValidReport(request.resource.data);
+      // Updating a report is allowed with valid data (for status changes or adding verifications)
+      allow update: if isValidReport(request.resource.data);
       
       // Deleting reports is forbidden
       allow delete: if false;
