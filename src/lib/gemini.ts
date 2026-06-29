@@ -20,12 +20,19 @@ export async function analyzeIssueImage(base64Image: string) {
   }
 }
 
-export async function generateComplaintLetter(name: string, ward: string, issue: string) {
+export async function generateComplaintLetter(
+  name: string,
+  ward: string,
+  issue: string,
+  city?: string,
+  phone?: string,
+  email?: string
+) {
   try {
     const response = await fetch("/api/gemini/generate-letter", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, ward, issue }),
+      body: JSON.stringify({ name, ward, issue, city, phone, email }),
     });
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);

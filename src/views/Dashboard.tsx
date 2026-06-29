@@ -55,13 +55,13 @@ type Zone = {
   risk: "low" | "medium" | "high";
 };
 
-// Seeding mock reports with realistic coordinates around Mumbai
+// Seeding mock reports with realistic coordinates around Kolkata
 const mockCoords = [
-  { lat: 19.0760, lng: 72.8777 }, // Main Street (near center)
-  { lat: 19.0820, lng: 72.8820 }, // Park Avenue
-  { lat: 19.0680, lng: 72.8700 }, // Oak Road
-  { lat: 19.0710, lng: 72.8910 }, // Market Square
-  { lat: 19.0900, lng: 72.8650 }, // Beach Road
+  { lat: 22.5726, lng: 88.3639 }, // Park Street Area (Center)
+  { lat: 22.5834, lng: 88.3798 }, // Salt Lake Sector V
+  { lat: 22.5361, lng: 88.3426 }, // Alipore
+  { lat: 22.5958, lng: 88.4012 }, // New Town
+  { lat: 22.5180, lng: 88.3832 }, // Ballygunge
 ];
 
 interface DashboardMapMarkerProps {
@@ -161,6 +161,10 @@ export function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const hasFetchedPredictionsRef = useRef(false);
 
+  // Map Centering and Zoom States (Default to Kolkata Center)
+  const [mapCenter, setMapCenter] = useState({ lat: 22.5726, lng: 88.3639 });
+  const [zoom, setZoom] = useState(12);
+
   // Gamification States
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [leaderboard, setLeaderboard] = useState<UserProfile[]>([]);
@@ -185,6 +189,25 @@ export function DashboardPage() {
     }
     return grid;
   };
+
+  // Attempt Geolocation on mount to center the map on the user's location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setMapCenter({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+          setZoom(14); // Zoom in closer for user's precise location
+        },
+        (error) => {
+          console.warn("Dashboard Geolocation failed, defaulting to Kolkata:", error);
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    }
+  }, []);
 
   useEffect(() => {
     const unsubscribe = subscribeToReports((fetchedReports) => {
@@ -528,8 +551,10 @@ export function DashboardPage() {
                 <div className="relative h-[450px] w-full rounded-lg overflow-hidden border border-border/40 bg-background/50">
                   <APIProvider apiKey={API_KEY} version="weekly">
                     <Map
-                      defaultCenter={{ lat: 19.0760, lng: 72.8777 }} // Mumbai Center
-                      defaultZoom={13}
+                      center={mapCenter}
+                      zoom={zoom}
+                      onCenterChanged={(ev) => setMapCenter(ev.detail.center)}
+                      onZoomChanged={(ev) => setZoom(ev.detail.zoom)}
                       mapId="DEMO_MAP_ID"
                       internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
                       style={{ width: "100%", height: "100%" }}

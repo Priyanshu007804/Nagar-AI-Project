@@ -171,10 +171,10 @@ Return ONLY the raw JSON object. Do not include any markdown formatting or surro
  * Generate Formal Municipal Complaint Letter via Gemini API
  */
 app.post("/api/gemini/generate-letter", async (req, res) => {
-  const { name, ward, issue } = req.body;
+  const { name, ward, issue, city, phone, email } = req.body;
 
-  if (!name || !ward || !issue) {
-    return res.status(400).json({ error: "Missing required parameters (name, ward, issue)" });
+  if (!name || !ward || !issue || !city || !phone) {
+    return res.status(400).json({ error: "Missing required parameters (name, ward, issue, city, phone)" });
   }
 
   const ai = getGeminiClient();
@@ -189,18 +189,22 @@ app.post("/api/gemini/generate-letter", async (req, res) => {
       year: "numeric",
     });
 
+    const issueTitle = issue.includes(". Details:") ? issue.split(". Details:")[0] : issue;
+
     const mockLetter = `To,
 The Municipal Commissioner,
 Municipal Corporation Department,
-Administrative Office.
+${city} Administrative Office.
 
 Date: ${today}
 
-Subject: Urgent Complaint Regarding ${issue} at ${ward}
+Subject: Urgent Complaint Regarding ${issueTitle} at ${ward} in ${city}
 
 Respected Sir/Madam,
 
-I am writing to draw your immediate attention to a persistent civic grievance in our locality. As a responsible resident of ${ward}, I am representing several concerned neighbors who are highly inconvenienced by the prevailing issue of: ${issue}.
+I am writing to draw your immediate attention to a persistent civic grievance in our locality. As a responsible resident of ${ward}, ${city}, I am representing several concerned neighbors who are highly inconvenienced by the prevailing issue.
+
+Specifically, we are experiencing: ${issue}
 
 This problem has been causing severe disruptions to daily life, posing substantial risks to the health, hygiene, and physical safety of residents and daily commuters in the area. 
 
@@ -209,8 +213,11 @@ Despite multiple informal appeals, the situation has not improved. Therefore, we
 Thanking you in anticipation of a swift and favorable response.
 
 Yours faithfully,
+
 ${name}
-Concerned Citizen of ${ward}`;
+Concerned Citizen of ${ward}, ${city}
+Phone: ${phone}
+${email ? `Email: ${email}` : ""}`;
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
     return res.json({ letter: mockLetter });
@@ -219,10 +226,13 @@ Concerned Citizen of ${ward}`;
   try {
     const prompt = `Write a highly professional, respectful, and concise formal complaint letter addressed to the Municipal Commissioner of the city corporation.
 Complainant Name: ${name}
+Complainant City: ${city}
+Complainant Phone: ${phone}
+${email ? `Complainant Email: ${email}` : ""}
 Ward/Area: ${ward}
 Issue Details: ${issue}
 
-Ensure it includes standard letters elements such as Date, Recipient, Subject, Salutation, Body paragraphs describing the inconvenience, a polite call to action, and formal sign-off. Do not include any markdown format, just the text.`;
+Ensure it includes standard letters elements such as Date, Recipient (Municipal Commissioner of ${city}), Subject, Salutation, Body paragraphs describing the inconvenience, a polite call to action, and formal sign-off. The sign-off should clearly show the citizen's contact information (Phone: ${phone}${email ? `, Email: ${email}` : ""}). Do not include any markdown format, just the text.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3.5-flash",
@@ -238,18 +248,22 @@ Ensure it includes standard letters elements such as Date, Recipient, Subject, S
       year: "numeric",
     });
 
+    const issueTitle = issue.includes(". Details:") ? issue.split(". Details:")[0] : issue;
+
     const mockLetter = `To,
 The Municipal Commissioner,
 Municipal Corporation Department,
-Administrative Office.
+${city} Administrative Office.
 
 Date: ${today}
 
-Subject: Urgent Complaint Regarding ${issue} at ${ward}
+Subject: Urgent Complaint Regarding ${issueTitle} at ${ward} in ${city}
 
 Respected Sir/Madam,
 
-I am writing to draw your immediate attention to a persistent civic grievance in our locality. As a responsible resident of ${ward}, I am representing several concerned neighbors who are highly inconvenienced by the prevailing issue of: ${issue}.
+I am writing to draw your immediate attention to a persistent civic grievance in our locality. As a responsible resident of ${ward}, ${city}, I am representing several concerned neighbors who are highly inconvenienced by the prevailing issue.
+
+Specifically, we are experiencing: ${issue}
 
 This problem has been causing severe disruptions to daily life, posing substantial risks to the health, hygiene, and physical safety of residents and daily commuters in the area. 
 
@@ -258,8 +272,11 @@ Despite multiple informal appeals, the situation has not improved. Therefore, we
 Thanking you in anticipation of a swift and favorable response.
 
 Yours faithfully,
+
 ${name}
-Concerned Citizen of ${ward}`;
+Concerned Citizen of ${ward}, ${city}
+Phone: ${phone}
+${email ? `Email: ${email}` : ""}`;
 
     res.json({ letter: mockLetter });
   }

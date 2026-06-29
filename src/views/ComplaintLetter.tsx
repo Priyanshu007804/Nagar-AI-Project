@@ -15,6 +15,9 @@ export function ComplaintLetterPage() {
   };
 
   const [citizenName, setCitizenName] = useState("");
+  const [city, setCity] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [ward, setWard] = useState("");
   const [issueType, setIssueType] = useState("");
   const [issueDescription, setIssueDescription] = useState("");
@@ -28,29 +31,15 @@ export function ComplaintLetterPage() {
 
   const handleGenerateLetter = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!citizenName || !issueDescription || !ward) return;
+    if (!citizenName || !city || !phone || !issueDescription || !ward) return;
 
     setIsGenerating(true);
     setError(null);
     setLetterContent("");
 
     try {
-      const today = new Date().toLocaleDateString("en-IN", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-
-      const prompt = `Generate a formal complaint letter to the Municipal Corporation of India from a citizen.
-Citizen Name: ${citizenName}
-Ward: ${ward}
-Issue: ${issueType} at ${location}
-Description: ${issueDescription}
-Date: ${today}
-Make it professional, firm but respectful.
-Include proper letterhead format, subject line, and closing. End with space for signature.`;
-
-      const letter = await generateComplaintLetter(citizenName, ward, prompt);
+      const issueDetails = `${issueType}${location ? ` at ${location}` : ""}. Details: ${issueDescription}`;
+      const letter = await generateComplaintLetter(citizenName, ward, issueDetails, city, phone, email);
       setLetterContent(letter);
     } catch (err) {
       console.error("Failed to generate letter:", err);
@@ -72,7 +61,69 @@ Include proper letterhead format, subject line, and closing. End with space for 
   };
 
   const handlePrint = () => {
-    window.print();
+    if (!letterContent) return;
+    
+    // Create a temporary hidden iframe for clean printing
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    document.body.appendChild(iframe);
+    
+    const doc = iframe.contentWindow?.document || iframe.contentDocument;
+    if (doc) {
+      doc.open();
+      doc.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Municipal Complaint Letter - NagarAI</title>
+            <style>
+              @page {
+                size: A4;
+                margin: 20mm;
+              }
+              body {
+                font-family: "Georgia", "Times New Roman", Times, serif;
+                font-size: 14px;
+                line-height: 1.6;
+                color: #111111;
+                background-color: #ffffff;
+                margin: 0;
+                padding: 10px;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              pre {
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                font-family: "Georgia", "Times New Roman", Times, serif;
+                font-size: 14px;
+                line-height: 1.6;
+                margin: 0;
+              }
+            </style>
+          </head>
+          <body>
+            <pre>${letterContent}</pre>
+          </body>
+        </html>
+      `);
+      doc.close();
+      
+      // Delay printing slightly to ensure the document parses and renders fully
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        document.body.removeChild(iframe);
+      }, 350);
+    } else {
+      // Fallback if iframe access fails
+      window.print();
+    }
   };
 
   return (
@@ -101,10 +152,60 @@ Include proper letterhead format, subject line, and closing. End with space for 
                   </label>
                   <Input
                     type="text"
+                    id="input-citizen-name"
                     placeholder="Enter your full name"
                     value={citizenName}
                     onChange={(e) => setCitizenName(e.target.value)}
                     required
+                    disabled={isGenerating}
+                    className="mt-2 bg-background/50 text-foreground placeholder:text-muted-foreground/50"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground">
+                      City <span className="text-red-400">*</span>
+                    </label>
+                    <Input
+                      type="text"
+                      id="input-city"
+                      placeholder="e.g. New Delhi"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      required
+                      disabled={isGenerating}
+                      className="mt-2 bg-background/50 text-foreground placeholder:text-muted-foreground/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground">
+                      Phone Number <span className="text-red-400">*</span>
+                    </label>
+                    <Input
+                      type="tel"
+                      id="input-phone"
+                      placeholder="e.g. +91 9876543210"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      required
+                      disabled={isGenerating}
+                      className="mt-2 bg-background/50 text-foreground placeholder:text-muted-foreground/50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground">
+                    Email Address <span className="text-muted-foreground">(Optional)</span>
+                  </label>
+                  <Input
+                    type="email"
+                    id="input-email"
+                    placeholder="yourname@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     disabled={isGenerating}
                     className="mt-2 bg-background/50 text-foreground placeholder:text-muted-foreground/50"
                   />

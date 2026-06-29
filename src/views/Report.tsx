@@ -34,7 +34,7 @@ interface MapWrapperProps {
 function MapWrapper({ pinLocation, setPinLocation, setLocationText, setReverseGeocoding }: MapWrapperProps) {
   const map = useMap();
   const geocodingLib = useMapsLibrary("geocoding");
-  const [mapCenter, setMapCenter] = useState({ lat: 19.0760, lng: 72.8777 }); // Mumbai
+  const [mapCenter, setMapCenter] = useState({ lat: 22.5726, lng: 88.3639 }); // Kolkata
   const [isLocating, setIsLocating] = useState(false);
   const [hasCentered, setHasCentered] = useState(false);
 
