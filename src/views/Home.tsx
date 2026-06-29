@@ -231,6 +231,9 @@ export function Home({ onNavigate }: HomeProps) {
           {/* Keep the beautiful cityscape ambient backdrop */}
           <HeroCityscape />
 
+          {/* Premium dark transparent dimming layer to optimize legibility and bring the command interface to the front */}
+          <div className="absolute inset-0 bg-slate-950/55 dark:bg-slate-950/75 backdrop-blur-[1.5px] pointer-events-none z-[1]" />
+
           <div className="relative z-10 mx-auto max-w-7xl w-full">
             {/* Header branding info */}
             <div className="mb-10 text-center lg:text-left flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 border-b border-border/10 pb-8">
