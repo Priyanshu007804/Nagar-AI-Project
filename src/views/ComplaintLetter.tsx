@@ -63,13 +63,13 @@ export function ComplaintLetterPage() {
   const handlePrint = () => {
     if (!letterContent) return;
     
-    // Create a temporary hidden iframe for clean printing
+    // Create a temporary off-screen iframe with positive dimensions for reliable printing
     const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
+    iframe.style.position = "absolute";
+    iframe.style.width = "800px";
+    iframe.style.height = "600px";
+    iframe.style.left = "-9999px";
+    iframe.style.top = "-9999px";
     iframe.style.border = "0";
     document.body.appendChild(iframe);
     
@@ -400,23 +400,80 @@ export function ComplaintLetterPage() {
       <style dangerouslySetInnerHTML={{
         __html: `
           @media print {
-            body * {
-              visibility: hidden !important;
+            /* Hide non-printable app shell elements */
+            header, nav, footer, #hero-particles, .no-print, button, form {
+              display: none !important;
             }
-            #letter-preview, #letter-preview * {
-              visibility: visible !important;
+
+            /* Hide everything inside the main content EXCEPT the letter preview card */
+            body > div > *:not(main),
+            main > div > *:not(.grid),
+            .grid > *:not(:last-child) {
+              display: none !important;
             }
-            #letter-preview {
-              position: absolute !important;
-              left: 0 !important;
-              top: 0 !important;
-              width: 100% !important;
+
+            /* Reset body and remove visual backgrounds for printing */
+            body {
               background: white !important;
               color: black !important;
-              padding: 40px !important;
-              font-size: 14px !important;
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+
+            main {
+              padding: 0 !important;
+              margin: 0 !important;
+            }
+
+            main > div {
+              padding: 0 !important;
+              margin: 0 !important;
+              max-width: 100% !important;
+            }
+
+            /* Make the preview card container take full page width and height */
+            .grid {
+              display: block !important;
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+
+            /* Style the preview card itself */
+            .grid > div:last-child,
+            .grid > div:last-child > div {
+              background: transparent !important;
+              border: none !important;
+              box-shadow: none !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              max-height: none !important;
+              overflow: visible !important;
+            }
+
+            /* Hide elements within the card we don't want to print (like the card header & buttons) */
+            .grid > div:last-child h2,
+            .grid > div:last-child .badge,
+            .grid > div:last-child div.space-y-3 {
+              display: none !important;
+            }
+
+            /* Format the pre-formatted text of the letter preview */
+            #letter-preview {
+              display: block !important;
+              background: white !important;
+              color: black !important;
+              padding: 0 !important;
+              margin: 0 !important;
               box-shadow: none !important;
               border: none !important;
+            }
+
+            #letter-preview pre {
+              font-family: "Georgia", "Times New Roman", Times, serif !important;
+              font-size: 14px !important;
+              line-height: 1.6 !important;
+              color: black !important;
+              white-space: pre-wrap !important;
             }
           }
         `
